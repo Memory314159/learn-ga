@@ -1,0 +1,45 @@
+name: Python Server CI/CD
+
+# 触发条件：当推送到 main 分支，或有 Pull Request 时触发
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    # 任务一：代码测试
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code (拉取代码)
+              uses: actions/checkout@v4
+
+            - name: Set up Python (安装 Python)
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.9"
+
+            - name: Install dependencies (安装依赖)
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+
+            - name: Run Tests (运行测试)
+              run: |
+                  pytest
+
+    # 任务二：构建 Docker 镜像 (只有当 test 任务成功后才执行)
+    build-image:
+        needs: test # 依赖关系：必须 test 成功才跑这个
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Build Docker image (尝试构建镜像)
+              run: docker build . --file Dockerfile --tag my-python-server:latest
+
+            # 进阶：如果你有 DockerHub 或 阿里云镜像仓库，可以在这里添加 "Push" 步骤
+            # - name: Push to Registry
+            #   run: ...
